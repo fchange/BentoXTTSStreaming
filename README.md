@@ -1,3 +1,11 @@
+<div align="center">
+    <h1 align="center">Building an XTTS Streaming API with BentoML</h1>
+</div>
+
+This is a BentoML example project, demonstrating how to build a text-to-speech inference API with streaming capability using the XTTS model.
+
+See [here](https://docs.bentoml.com/en/latest/examples/overview.html) for a full list of BentoML example projects.
+
 ## Install dependencies
 
 ```bash

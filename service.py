@@ -11,10 +11,14 @@ from fastapi.responses import StreamingResponse
 
 from streaming_utils import StreamingInputs, predict_streaming_generator
 
-
-BENTO_MODEL_TAG = "coqui--xtts-v2"
-
 app = FastAPI()
+
+
+def load_model():
+    # SDK模型下载
+    from modelscope import snapshot_download
+    snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
+
 
 @bentoml.service(
     traffic={
@@ -28,45 +32,28 @@ app = FastAPI()
     workers=3,
 )
 @bentoml.mount_asgi_app(app, path="/tts")
-class XTTSStreaming:
-
-    bento_model_ref = bentoml.models.BentoModel(BENTO_MODEL_TAG)
+class TTSStreaming:
 
     def __init__(self) -> None:
-        import torch
+        from self.model.cli.cosyvoice import CosyVoice, CosyVoice2
+        from self.model.utils.file_utils import load_wav
+        import torchaudio
 
-        from TTS.tts.configs.xtts_config import XttsConfig
-        from TTS.tts.models.xtts import Xtts
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        try:
+            self.model = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=False, fp16=False)
+        except Exception as e:
+            print(e)
+            load_model()
+            self.model = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=False, fp16=False)
 
-        config = XttsConfig()
-        config.load_json(self.bento_model_ref.path_of("config.json"))
-        self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(
-            config,
-            checkpoint_dir=self.bento_model_ref.path,
-            eval=True,
-            use_deepspeed=True if self.device == "cuda" else False
-        )
-        self.model.to(self.device)
-        print("XTTS Loaded.", flush=True)
+        print("model Loaded.", flush=True)
 
-        cdir = pathlib.Path(__file__).parent.resolve()
-        voice_path = cdir / "female.wav"
-        _t = self.model.get_conditioning_latents(voice_path)
-        self.gpt_cond_latent = _t[0]
-        self.speaker_embedding = _t[1]
-
-        
     @app.post("/stream")
     def tts_stream(self, inp: StreamingInputs):
         gen = predict_streaming_generator(
             model=self.model,
             text=inp.text,
-            language=inp.language,
-            speaker_embedding=self.speaker_embedding,
-            gpt_cond_latent=self.gpt_cond_latent,
             stream_chunk_size=inp.stream_chunk_size,
             add_wav_header=inp.add_wav_header,
         )

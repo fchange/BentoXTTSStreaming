@@ -21,27 +21,19 @@ pip install -r requirements.txt
 We need to import xtts model to local BentoML model store first. You may also set the environment variable `COQUI_TTS_AGREED=1` to agree to the terms of Coqui TTS.
 
 ```bash
-$ COQUI_TOS_AGREED=1 python import_model.py
+$ 
+=1 python import_model.py
 ```
 
 We can list imported model by running:
 
 ```bash
 $ bentoml models list
-
-Tag                                                                   Module  Size        Creation Time
-coqui--xtts-v2:xhbbjpeiqsveicf7                                               1.95 GiB    2024-10-12 18:28:30
 ```
 
 ## Run the BentoML Service
 
 We have defined a BentoML Service in `service.py`. Run `bentoml serve` in your project directory to start the Service.
-
-```python
-$ COQUI_TOS_AGREED=1 bentoml serve .
-
-2024-01-18T11:13:54+0800 [INFO] [cli] Starting production HTTP BentoServer from "service:XTTSStreaming" listening on http://localhost:3000 (Press CTRL+C to quit)
-```
 
 The server is now active at [http://localhost:3000](http://localhost:3000/). You can interact with it using the Swagger UI or in other different ways.
 
